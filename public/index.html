@@ -1,0 +1,121 @@
+<html>
+<head>
+    <style type="text/css">
+        #mapFrame {
+            width: 450px;
+            height: 250px;
+        }
+    </style>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js"></script>
+    <script src="jquery-2.2.1.min.js"> </script>
+    <script src="script.js"></script>
+    <script>        
+        //var stylesURL = "https://snazzymaps.com/explore.json?key=204b899c-9130-4202-afb4-8fa9491c91e5";
+        var styles;
+        var styleId;
+        
+        $(document).ready(function($) {
+            loadMyStyles();
+        });
+        
+        $(document).on("change","#mapStyles",function(){
+               //alert("PROBANDO");
+               var e = document.getElementById("mapStyles");
+               var strElement = e.options[e.selectedIndex].value;
+               //console.log(strElement);
+               styleId = strElement;
+               for (var i =0; i< styles.length; i++) {
+                    if (styles[i].id == strElement) {
+                        //console.log ("encontrado");
+                        map.setOptions({styles: JSON.parse(styles[i].json)});             
+                    }
+               }
+        });
+          
+        var loadMyStyles = function() {
+            var url = "./listStyles";
+            loadURL(url, function(data){
+                var styleData = JSON.parse(data);
+                styles = styleData.styles;
+                //console.log(styles);
+                
+                $.each(styles, function (key, value) {
+                    //console.log("Appending");
+                    $("#mapStyles").append($("<option></option>").val(value.id).html(value.name));
+                });
+            });
+        }
+        
+        function detectEnter(event) {
+            var x = event.charCode;
+            //var location = "New+York,+NY";
+            //var source = "https://www.google.com/maps/embed/v1/search?key=AIzaSyBBJWwBYBaHqCncARkc_UAKNDQj8oPlHS0&q=";
+           
+            if (x == 13) {
+                //location = document.getElementById("tbAddress").value;
+                //source += location;
+                //document.getElementById("mapFrame").src = source;
+                
+                var geocoder = new google.maps.Geocoder();
+                
+                //In this case it gets the address from an element on the page, but obviously you  could just pass it to the method instead
+                var address = document.getElementById("tbAddress").value;
+
+                geocoder.geocode( { 'address': address}, function(results, status) {
+                    if (status == google.maps.GeocoderStatus.OK) {
+                        //In this case it creates a marker, but you can get the lat and lng from the location.LatLng
+                        map.setCenter(results[0].geometry.location);
+                        var marker = new google.maps.Marker({
+                            map: map, 
+                            position: results[0].geometry.location
+                        });
+                    } else {
+                        alert("Geocode was not successful for the following reason: " + status);
+                    }
+                });
+            }
+        }
+        
+        var map;
+        // When the window has finished loading create our google map below
+        google.maps.event.addDomListener(window, 'load', init);
+
+        function init() {
+            // Basic options for a simple Google Map
+            // For more options see: https://developers.google.com/maps/documentation/javascript/reference#MapOptions
+            var mapOptions = {
+                // How zoomed in you want the map to start at (always required)
+                zoom: 11,
+
+                // The latitude and longitude to center the map (always required)
+                center: new google.maps.LatLng(40.6700, -73.9400), // New York
+
+                // How you would like to style the map. 
+                // This is where you would paste any style found on Snazzy Maps.
+                
+            };
+
+            // Get the HTML DOM element that will contain your map 
+            // We are using a div with id="map" seen below in the <body>
+            var mapElement = document.getElementById('mapFrame');
+
+            // Create the Google Map using our element and options defined above
+            map = new google.maps.Map(mapElement, mapOptions);
+            
+            // Let's also add a marker while we're at it
+            var marker = new google.maps.Marker({
+                position: new google.maps.LatLng(40.6700, -73.9400),
+                map: map,
+                title: 'Snazzy!'
+            });
+        }
+    </script>
+</head>
+<body>
+    <input type="text" id="tbAddress" style="width: 450px;" onkeypress="detectEnter(event)" value="enter address" onclick='javascript: this.value = ""'><br><br>
+    <select id="mapStyles" style="width: 450px;">
+        <option selected="selected">select map style</option>
+    </select><br><br>
+    <div id="mapFrame"></div>
+</body>
+</html>
